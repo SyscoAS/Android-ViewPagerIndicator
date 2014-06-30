@@ -20,10 +20,12 @@ import android.content.Context;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -55,6 +57,18 @@ public class TabPageIndicator extends HorizontalScrollView implements PageIndica
     private final OnClickListener mTabClickListener = new OnClickListener() {
         public void onClick(View view) {
             TabView tabView = (TabView)view;
+            final int oldSelected = mViewPager.getCurrentItem();
+            final int newSelected = tabView.getIndex();
+            mViewPager.setCurrentItem(newSelected);
+            if (oldSelected == newSelected && mTabReselectedListener != null) {
+                mTabReselectedListener.onTabReselected(newSelected);
+            }
+        }
+    };
+
+    private final OnClickListener mIconTabClickListener = new OnClickListener() {
+        public void onClick(View view) {
+            IconTabView tabView = (IconTabView) view;
             final int oldSelected = mViewPager.getCurrentItem();
             final int newSelected = tabView.getIndex();
             mViewPager.setCurrentItem(newSelected);
@@ -150,17 +164,31 @@ public class TabPageIndicator extends HorizontalScrollView implements PageIndica
     }
 
     private void addTab(int index, CharSequence text, int iconResId) {
-        final TabView tabView = new TabView(getContext());
-        tabView.mIndex = index;
-        tabView.setFocusable(true);
-        tabView.setOnClickListener(mTabClickListener);
-        tabView.setText(text);
+        if (TextUtils.isEmpty(text)) {
+            final IconTabView icontabView = new IconTabView(getContext());
+            icontabView.mIndex = index;
+            icontabView.setFocusable(true);
+            icontabView.setOnClickListener(mIconTabClickListener);
 
-        if (iconResId != 0) {
-            tabView.setCompoundDrawablesWithIntrinsicBounds(0, iconResId, 0, 0);
+            icontabView.setImageResource(iconResId);
+
+            mTabLayout.addView(icontabView, new LinearLayout.LayoutParams(0,
+                    MATCH_PARENT, 1));
+        } else {
+            final TabView tabView = new TabView(getContext());
+            tabView.mIndex = index;
+            tabView.setFocusable(true);
+            tabView.setOnClickListener(mTabClickListener);
+            tabView.setText(text);
+
+            if (iconResId != 0) {
+                tabView.setCompoundDrawablesWithIntrinsicBounds(iconResId, 0,
+                        0, 0);
+            }
+
+            mTabLayout.addView(tabView, new LinearLayout.LayoutParams(0,
+                    MATCH_PARENT, 1));
         }
-
-        mTabLayout.addView(tabView, new LinearLayout.LayoutParams(0, MATCH_PARENT, 1));
     }
 
     @Override
@@ -280,4 +308,30 @@ public class TabPageIndicator extends HorizontalScrollView implements PageIndica
             return mIndex;
         }
     }
+
+    private class IconTabView extends ImageView {
+
+        private int mIndex;
+
+        public IconTabView(Context context) {
+            super(context, null, R.attr.vpiTabPageIndicatorStyle);
+        }
+
+        @Override
+        public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+            // Re-measure if we went beyond our maximum size.
+            if (mMaxTabWidth > 0 && getMeasuredWidth() > mMaxTabWidth) {
+                super.onMeasure(MeasureSpec.makeMeasureSpec(mMaxTabWidth,
+                        MeasureSpec.EXACTLY), heightMeasureSpec);
+            }
+        }
+
+        public int getIndex() {
+            return mIndex;
+        }
+
+    }
+
 }

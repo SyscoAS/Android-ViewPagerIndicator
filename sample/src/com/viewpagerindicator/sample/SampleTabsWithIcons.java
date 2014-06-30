@@ -44,7 +44,7 @@ public class SampleTabsWithIcons extends FragmentActivity {
 
         @Override
         public CharSequence getPageTitle(int position) {
-            return CONTENT[position % CONTENT.length].toUpperCase();
+            return "";
         }
 
         @Override public int getIconResId(int index) {
